@@ -89,7 +89,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    chart1.play();
-    setTimeout( chart1.stop, 5000 ) // test use, stop playing after 10 seconds
 }, false);

@@ -12,6 +12,11 @@
         s.partial = options.partial || 6;
         s.running = false; // true if sound is playing
         s.Oscs = []
+        if ( options.mapping ) {
+            s.mapping = options.mapping;
+        } else {
+            s.mapping = function( input ){ return input; };
+        }
         for ( i in chart.series ) {
             s.Oscs.push( new Tone.Oscillator(0, s.oscType + s.partial ).toMaster() ); // Oscillator sound player
         }
@@ -49,8 +54,6 @@
             if ( !s.running ) { // redraw ticker and shaker when not running
                 for ( i in s.Oscs ) {
                     if ( !chart.series[i].data[s.offset] ) continue;
-                    var value = chart.series[i].data[s.offset].y;
-                    s.Oscs[i].frequency.value = value;
                     var ySpan = chart.yAxis[0].max - chart.yAxis[0].min;
                     s.shakers[i].translate(0, -(chart.plotHeight * chart.series[i].data[s.offset].y / ySpan));
                 }
@@ -63,7 +66,7 @@
                 for ( i in s.Oscs ) {
                     if ( !chart.series[i].data[s.offset] ) continue;
                     var value = chart.series[i].data[s.offset].y;
-                    s.Oscs[i].frequency.value = value;
+                    s.Oscs[i].frequency.value = s.mapping(value);
                     var ySpan = chart.yAxis[0].max - chart.yAxis[0].min;
                     s.shakers[i].translate(0, -(chart.plotHeight * chart.series[i].data[s.offset].y / ySpan));
                 }
@@ -73,6 +76,8 @@
                 setTimeout( loop, s.speed )
             }
         }
+
+/*********************public functions:****************************/
         /****** chart.play ******
             play sound start from beginning
         *************************/
@@ -85,6 +90,7 @@
             s.running = true;
             loop();
         };
+
         /****** chart.play ******
             play sound from previous stop position
         *************************/
@@ -104,6 +110,20 @@
             for ( i in s.Oscs ) {
                 s.Oscs[i].stop();
             }
+        }
+
+
+        /****** chart.mapping ******
+            change the value-sound mapping,
+            the default mapping is directed mapping
+
+            input:
+                mappingFn: must be a function that comsumes a
+                    number, return an integer or a string
+                    represents frequency
+        ****************************/
+        chart.mapping = function( mappingFn ) {
+            s.mapping = mappingFn;
         }
 
         /* TODO
