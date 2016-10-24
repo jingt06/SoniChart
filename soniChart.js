@@ -46,20 +46,26 @@
             s.shakers.push( chart.yAxis[0].addPlotBand(shakerOptions).svgElem );
         }
 
-        H.addEvent(chart.container, 'click', function (event) {
-            if ( !event.point && !event.xAxis ) return; // return if this is a drag click event
-            var newOffset = Math.floor(event.point ? event.point.x : event.xAxis[0].value);
-            if ( newOffset < 0 || newOffset > chart.xAxis[0].max ) return;
-            s.offset =  newOffset;
-            if ( !s.running ) { // redraw ticker and shaker when not running
-                for ( i in s.Oscs ) {
-                    if ( !chart.series[i].data[s.offset] ) continue;
-                    var ySpan = chart.yAxis[0].max - chart.yAxis[0].min;
-                    s.shakers[i].translate(0, -(chart.plotHeight * chart.series[i].data[s.offset].y / ySpan));
+        if ( ! options.playback ) options.playback = {};
+        options.playback.playback = {}
+        if ( options.playback.enabled == null || options.playback.enabled ){
+            H.addEvent(chart.container, 'click', function (event) {
+                if ( !event.point && !event.xAxis ) return; // return if this is a drag click event
+                var newOffset = Math.floor(event.point ? event.point.x : event.xAxis[0].value);
+                if ( newOffset < 0 || newOffset > chart.xAxis[0].max ) return;
+                s.offset =  newOffset;
+                if ( !s.running ) { // redraw ticker and shaker when not running
+                    for ( i in s.Oscs ) {
+                        if ( !chart.series[i].data[s.offset] ) continue;
+                        var ySpan = chart.yAxis[0].max - chart.yAxis[0].min;
+                        s.shakers[i].translate(0, -(chart.plotHeight * chart.series[i].data[s.offset].y / ySpan));
+                        var value = chart.series[i].data[s.offset].y;
+                        s.Oscs[i].frequency.value = s.mapping(value);
+                    }
+                    if ( s.tickerOptions.enabled ) s.ticker.translate(s.offset / chart.xAxis[0].max * chart.plotWidth, 0);
                 }
-                if ( s.tickerOptions.enabled ) s.ticker.translate(s.offset / chart.xAxis[0].max * chart.plotWidth, 0);
-            }
-        });
+            });
+        }
 
         var loop = function(){
             if ( s.running ) {
@@ -91,12 +97,14 @@
             loop();
         };
 
-        /****** chart.play ******
-            play sound from previous stop position
+        /****** chart.start ******
+            play sound from previous stop/paused position
         *************************/
         chart.start = function() {
-            for ( i in s.Oscs ) {
-                s.Oscs[i].start();
+            if ( !s.running ) {
+                for ( i in s.Oscs ) {
+                    s.Oscs[i].start();
+                }
             }
             //s.osc.start();
             s.running = true;
@@ -112,6 +120,12 @@
             }
         }
 
+        /****** chart.pause ******
+            pause at current position, but continue make sound
+        *************************/
+        chart.pause = function() {
+            s.running = false;
+        }
 
         /****** chart.mapping ******
             change the value-sound mapping,
